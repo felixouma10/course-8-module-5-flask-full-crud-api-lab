@@ -21,7 +21,10 @@ events = [
 # Create a new event from JSON input
 @app.route("/events", methods=["POST"])
 def create_event():
-    data = request.get_json()
+    data = request.get_json(silent=True)
+    if not isinstance(data, dict) or "title" not in data:
+        return jsonify({"error": "A title is required"}), 400
+
     new_id = max((e.id for e in events), default=0) + 1
     new_event = Event(id=new_id, title=data["title"])
     events.append(new_event)
@@ -31,13 +34,16 @@ def create_event():
 # Update the title of an existing event
 @app.route("/events/<int:event_id>", methods=["PATCH"])
 def update_event(event_id):
-    data = request.get_json()
     event = next((e for e in events if e.id == event_id), None)
     if not event:
         return ("Event not found", 404)
-    if "title" in data:
-        event.title = data["title"]
-        return jsonify(event.to_dict())
+
+    data = request.get_json(silent=True)
+    if not isinstance(data, dict) or "title" not in data:
+        return jsonify({"error": "A title is required"}), 400
+
+    event.title = data["title"]
+    return jsonify(event.to_dict())
 
 # TODO: Task 1 - Define the Problem
 # Remove an event from the list
